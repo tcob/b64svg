@@ -1,2 +1,2 @@
 source "https://rubygems.org"
-	gem "rmagick"
+	gem "mini_magick"
