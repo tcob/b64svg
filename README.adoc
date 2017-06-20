@@ -14,6 +14,12 @@ cd b64svg
 bundle install
 ```
 
+The SVGO tool is also a prerequisite:
+
+```
+npm install -g svgo
+```
+
 Then add the script to your shell:
 
 ```bash
