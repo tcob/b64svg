@@ -1,3 +1,6 @@
 = b64svg
 
+image:https://travis-ci.org/bsmith-n4/b64svg.svg?branch=master["Build Status", link="https://travis-ci.org/bsmith-n4/b64svg"]
+
 A small ruby application for compressing SVGs that contain base64 encoded PNGs
+
