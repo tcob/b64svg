@@ -2,7 +2,7 @@
 
 image:https://travis-ci.org/bsmith-n4/b64svg.svg?branch=master["Build Status", link="https://travis-ci.org/bsmith-n4/b64svg"]
 
-A small ruby script for compressing SVGs that contain embedded base64 encoded PNGs
+A small ruby script/toolchain for compressing SVGs that contain embedded base64 encoded PNGs
 
 == Installation
 
@@ -36,7 +36,7 @@ b64svg.rb <quality>
 
 The jpeg compression quality can be set using `quality` with an integer value of `1`-`100` (1 being lowest quality and highest compression rate).
 
-The SVGs are then compressed using an https://github.com/tribune/svgo_wrapper[SVGO wrapper].
+The SVG XML itself is then compressed and formatted using an https://github.com/tribune/svgo_wrapper[SVGO wrapper].
 
 == Current Behaviour
 
