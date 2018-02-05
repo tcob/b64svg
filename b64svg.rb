@@ -3,12 +3,31 @@
 require "base64"
 require "image_optimizer"
 require "mini_magick"
+require "svgo_wrapper"
+require "optparse"
+require "fileutils"
 
 ARGV[0].nil? ? quality = 50 : quality = ARGV[0].to_i
+ARGV[1].nil? ? backup = false : backup = ARGV[1]
+ARGV[2].nil? ? formall = false : formall = ARGV[2]
+
+if backup == "backup"
+  backup = true
+  budir = ENV['HOME'] + "/Desktop/SVGbackup/"
+  puts "Save option passed: backing up original files to " + budir
+end
+
+
 
 if ARGV.empty?
-  puts "Using default quality of 50%. Set using script.rb 1-100 (lowest quality to highest quality)"
+  puts "Please specify at least a compression quality setting.\n\n"
+  puts "Minimum usage:\n\n    b64svg.rb 50\n\n"
+  puts "This will compress files to 50% quality. For lower quality, use a lower number."
+  puts "To create backups of the original SVG, pass the 'backup' option:\n"
+  puts "Example:\n\n    b64svg.rb 60 backup\n\n"
+  exit
 end
+
 
 arr_encoded = []
 arr_compressed_jpegs = []
@@ -17,7 +36,7 @@ svgs = File.join("**", "*.svg")
 # change to **/*.svg or use ARGV
 input_files = Dir.glob(svgs)
 
-  input_files.each do |file_name|
+input_files.each do |file_name|
   # init counters for line count, image count and indexing of compressed images
   lc = 0 && ic = 0 && i = 0
   # clear
@@ -30,21 +49,23 @@ input_files = Dir.glob(svgs)
       arr_encoded.push li[/(?<=\/png;base64,).*(?=\")/] if li[/(?<=\/png;base64,).*(?=\")/] && ic = ic + 1
     end 
 
-  # Continue only if at least one embedded image found
+  # Check for embedded PNGs one embedded image found
   if ic > 0
-    puts "Found " + ic.to_s + " embedded images in " + file_name.to_s + " -- SVG size: " + (File.size(file_name).to_f / 1024).round(2).to_s + " KB"
+    puts "\nFound " + ic.to_s + " embedded images in " + file_name.to_s + " -- SVG size: " + (File.size(file_name).to_f / 1024).round(2).to_s + " KB"
     ic = 0
 
+    svgo = SvgoWrapper.new
+
     # name outfile file and remove if already existing
-    output_SVG = "comp" + file_name
+    output_SVG = file_name + "comp"
     File.delete(output_SVG) if File.exist?(output_SVG)
 
     arr_encoded.each { |encoded|
       ic = ic + 1
       decoded = Base64.decode64(encoded)
       number = ic.to_s
-      png = "comp" + file_name + number + ".png"
-      jpeg = "comp" + file_name + number + ".jpg"
+      png = file_name + number + ".png"
+      jpeg = file_name + number + ".jpg"
       
       File.open(png, "wb") do |f|
         f.write(decoded)
@@ -60,17 +81,17 @@ input_files = Dir.glob(svgs)
       data = File.open(jpeg, "rb") {|io| io.read}
       encodedjpg = Base64.encode64(data)
       arr_compressed_jpegs.push encodedjpg
-      #File.delete(png)
-      #File.delete(jpeg)
+      
+      File.delete(png)
+      File.delete(jpeg)
     }
 
     # Replace with indexed string if pattern found
     File.open(file_name).each_line do |li|
       if li[/(?<=\/png;base64,).*=?(?=\")/]
         jpeg_index = arr_compressed_jpegs[i]
-        replacement = li.gsub(/(?<=\/png;base64,).*(?=\")/, "#{jpeg_index}")
-        
-        File.open(output_SVG, 'a') { |f| f.write(replacement) }
+        regex = li.gsub(/png;base64,.*(?=\")/, "jpg;base64,#{jpeg_index}")                
+        File.open(output_SVG, 'a') { |f| f.write(regex) }
           i = i + 1
         else File.open(output_SVG, 'a') { |f| f.write(li) }
         end
@@ -80,8 +101,20 @@ input_files = Dir.glob(svgs)
     osize = (File.size(file_name).to_f / 1024).round(2)
     esize = (File.size(output_SVG).to_f / 1024).round(2)
 
-    puts "Done. " + file_name.to_s + " - " + osize.to_s + " KB --> " + esize.to_s + " KB"
-    puts "Filesize compressed by " + (osize - esize).round(2).to_s + " KB. (" + ( 100 - (esize / osize) * 100).round(2).to_s + "%)."
-    #File.delete(file_name)
+    puts "DONE. " + file_name.to_s + " - " + osize.to_s + " KB --> " + esize.to_s + " KB"
+    puts "Filesize (before SVG compression) reduced by " + (osize - esize).round(2).to_s + " KB. (" + ( 100 - (esize / osize) * 100).round(2).to_s + "%).\n\n"
+    
+    if backup == true
+      Dir.mkdir(budir) unless File.exists?(budir)
+      t = (Time.now.to_f * 1000).to_i.to_s
+      FileUtils.cp(file_name, budir + t + "-" + file_name)
+      else
+        File.delete(file_name)
+    end
+    File.rename(output_SVG, file_name)
+    formatted = svgo.optimize_images_data(File.read(file_name))
+    File.open(file_name, 'w') { |f| f.write(formatted)}
+  else
+    puts "No embedded PNGs found, skipping " + file_name
   end
 end

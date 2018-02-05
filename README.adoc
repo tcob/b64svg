@@ -1,6 +1,70 @@
-= b64svg
+= Base64 SVG Compressor
 
 image:https://travis-ci.org/bsmith-n4/b64svg.svg?branch=master["Build Status", link="https://travis-ci.org/bsmith-n4/b64svg"]
 
-A small ruby application for compressing SVGs that contain base64 encoded PNGs
+A small ruby script/toolchain for compressing SVGs that contain embedded base64 encoded PNGs
 
+== Installation
+
+To get started and download dependencies:
+
+```
+git clone git@github.com:bsmith-n4/b64svg.git
+cd b64svg
+bundle install
+```
+
+The SVGO tool is also a prerequisite:
+
+```
+npm install -g svgo
+```
+
+Then add the script to your shell:
+
+```bash
+export PATH=$PATH:/path/to/b64svg
+```
+
+== Usage
+
+To recursively convert SVGs in all subdirectories, simply run:
+
+```bash
+b64svg.rb <quality>
+```
+
+The jpeg compression quality can be set using `quality` with an integer value of `1`-`100` (1 being lowest quality and highest compression rate).
+
+The SVG XML itself is then compressed and formatted using an https://github.com/tribune/svgo_wrapper[SVGO wrapper].
+
+== Current Behaviour
+
+The following conversion options are enforced:
+
+* flatten PNGs to eliminate transparency in JPEGs
+
+== Improvements
+
+Several functional improvements will be made such as command line options for the following:
+
+* run SVGO on all SVGs
+* compression options for SVGO
+* target directory
+* leave original files in-place
+* only convert specified file or directory
+
+Code improvements needed are 
+
+* tests (requires abstraction)
+* refactoring to improve speed
+
+== Reporting Bugs
+
+Please feel free to https://github.com/bsmith-n4/b64svg/issues[open an issue] for :bug: or feature requests.
+
+== Contributing
+
+If you want to contribute, please feel free to open a PR.
+
+:100:
